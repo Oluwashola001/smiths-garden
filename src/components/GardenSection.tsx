@@ -60,9 +60,9 @@ function FadeIn({ children, delay = 0, className = "" }: {
 ════════════════════════════════════════════ */
 function MobileImageStack() {
   const images = [
-    { src: "/garden-main.jpg",     label: "Your Garden" },
-    { src: "/garden-accent-1.jpg", label: "Each Season" },
-    { src: "/garden-accent-2.jpg", label: "Unique Finds" },
+    { src: "/garden-main.jpg",     label: "Beautify" },
+    { src: "/garden-accent-1.jpg", label: "Your Garden" },
+    { src: "/garden-accent-2.jpg", label: "Each Season" },
   ];
 
   return (
@@ -188,7 +188,7 @@ function GardenShowcase() {
   ];
 
   return (
-    <div className="w-full px-5 sm:px-10 xl:px-20 pt-20 pb-10">
+    <div className="w-full px-5 sm:px-10 xl:px-20 pt:20 md:pt-20 pb-10">
       <div className="max-w-[1400px] mx-auto grid lg:grid-cols-2 gap-10 xl:gap-16 items-center">
 
         {/* Images — mobile stack or desktop mosaic */}
