@@ -43,7 +43,7 @@ function TriptychPanel({
       className="relative overflow-hidden flex-1"
       style={{
         borderRadius: isCenter ? "1.5rem" : "1rem",
-        marginTop: isCenter ? "0" : "0rem",   /* ← adjust this to shift side panels up/down */
+        marginTop: isCenter ? "0" : "0rem",
         marginBottom: isCenter ? "0" : "3rem",
         boxShadow: isCenter
           ? "0 32px 80px rgba(0,0,0,0.7), 0 0 0 1.5px rgba(255,255,255,0.12)"
@@ -74,103 +74,55 @@ function TriptychPanel({
             "linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 50%)",
         }}
       />
-
-      <motion.span
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 0.35 }}
-        transition={{ delay: 1.2 + index * 0.15 }}
-        className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white text-[10px] tracking-[0.25em] uppercase font-light"
-      >
-        0{index + 1}
-      </motion.span>
+      {/* Number tags removed */}
     </motion.div>
   );
 }
 
 /* ─────────────────────────────────────────────
-   MOBILE: Auto-cycling single video
+   MOBILE: Seamless crossfade carousel
+   All 3 videos are always mounted and playing —
+   switching is a pure CSS opacity transition
+   between already-buffered, already-painted frames.
+   No src swaps, no remounts, no black flash.
 ───────────────────────────────────────────── */
 function MobileVideoCarousel() {
-  const [current, setCurrent] = useState(0);
-  const [next, setNext] = useState<number | null>(null);
-  const [transitioning, setTransitioning] = useState(false);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [active, setActive] = useState(0);
+  const videoRefs = useRef<(HTMLVideoElement | null)[]>([null, null, null]);
 
-  const advance = () => {
-    if (transitioning) return;
-    const nextIdx = (current + 1) % videos.length;
-    setNext(nextIdx);
-    setTransitioning(true);
-    setTimeout(() => {
-      setCurrent(nextIdx);
-      setNext(null);
-      setTransitioning(false);
-    }, 900);
-  };
+  // Play all videos from mount so they're always buffered
+  useEffect(() => {
+    videoRefs.current.forEach((v) => {
+      if (v) v.play().catch(() => {});
+    });
+  }, []);
 
   useEffect(() => {
-    timerRef.current = setTimeout(advance, 4500);
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
-  }, [current, transitioning]);
+    const id = setInterval(() => {
+      setActive((prev) => (prev + 1) % videos.length);
+    }, 4500);
+    return () => clearInterval(id);
+  }, []);
 
   return (
     <div className="absolute inset-0 overflow-hidden">
-      <video
-        key={current}
-        src={videos[current]}
-        autoPlay
-        loop
-        muted
-        playsInline
-        className="absolute inset-0 w-full h-full object-cover"
-        style={{
-          opacity: transitioning ? 0 : 1,
-          transition: "opacity 0.9s ease",
-        }}
-      />
-
-      <AnimatePresence>
-        {next !== null && (
-          <motion.video
-            key={`next-${next}`}
-            src={videos[next]}
-            autoPlay
-            muted
-            playsInline
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.9 }}
-            className="absolute inset-0 w-full h-full object-cover"
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Dots */}
-      <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex gap-2 z-20">
-        {videos.map((_, i) => (
-          <button
-            key={i}
-            onClick={() => {
-              if (i === current || transitioning) return;
-              setNext(i);
-              setTransitioning(true);
-              setTimeout(() => {
-                setCurrent(i);
-                setNext(null);
-                setTransitioning(false);
-              }, 900);
-            }}
-            className="rounded-full transition-all duration-300"
-            style={{
-              width: i === current ? "20px" : "6px",
-              height: "6px",
-              background: i === current ? "#FFFF00" : "rgba(255,255,255,0.45)",
-            }}
-          />
-        ))}
-      </div>
+      {videos.map((src, i) => (
+        <video
+          key={src}
+          ref={(el) => { videoRefs.current[i] = el; }}
+          src={src}
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover"
+          style={{
+            opacity: i === active ? 1 : 0,
+            transition: i === active ? "opacity 1.2s ease" : "opacity 0.8s ease",
+            willChange: "opacity",
+          }}
+        />
+      ))}
     </div>
   );
 }
@@ -183,14 +135,14 @@ export default function Hero() {
     <main className="min-h-screen bg-black">
       <section className="relative w-full overflow-hidden" style={{ height: "100svh", minHeight: 600, overflowAnchor: "none" }}>
 
-        {/* ── DESKTOP: triptych — top padding reduced to shift panels up ── */}
+        {/* ── DESKTOP: triptych ── */}
         <div className="hidden md:flex absolute inset-0 items-stretch gap-3 px-6 pb-8 pt-3 z-0">
           {videos.map((src, i) => (
             <TriptychPanel key={src} src={src} index={i} isCenter={i === 1} />
           ))}
         </div>
 
-        {/* ── MOBILE: cycling single video ── */}
+        {/* ── MOBILE: seamless crossfade carousel ── */}
         <div className="md:hidden absolute inset-0 z-0">
           <MobileVideoCarousel />
         </div>
@@ -204,14 +156,11 @@ export default function Hero() {
           }}
         />
 
-        {/* ── Content layer ──
-            Mobile:  justify-center  → headline + CTA sit in the vertical middle
-            Desktop: justify-end     → headline + CTA sit near the bottom, shifted up via pb
-        ── */}
+        {/* ── Content layer ── */}
         <div className="relative z-20 h-full flex flex-col justify-end md:justify-end px-6 md:px-10 xl:px-16 py-8 md:py-10 max-w-[1600px] mx-auto w-full">
 
-          {/* HEADLINE + CTA */}
-          <div className="flex flex-col items-start gap-6 pb-24 md:pb-26">  {/* ← pb-24 = mobile distance from bottom; md:pb-16 = desktop */}
+          {/* HEADLINE + CTA — shifted further down via increased pb */}
+          <div className="flex flex-col items-start gap-6 pb-16 md:pb-26">
 
             {/* #LetsGROW */}
             <motion.div

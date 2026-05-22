@@ -200,12 +200,7 @@ function GardenShowcase() {
         {/* Text */}
         <div className="flex flex-col gap-6">
           <FadeUp delay={0.1}>
-            <span
-              className="inline-block text-[10px] font-bold uppercase tracking-[0.3em]"
-              style={{ color: GL }}
-            >
-              Beyond the Garden
-            </span>
+            
             <h2
               className="mt-2 text-3xl md:text-4xl xl:text-5xl font-black leading-tight"
               style={{
@@ -374,7 +369,7 @@ function EmailClub() {
                 className="inline-block text-[10px] font-bold uppercase tracking-[0.3em]"
                 style={{ color: GL }}
               >
-                Stay in the Loop
+                Stay in Touch
               </span>
 
               {/* Headline — white */}

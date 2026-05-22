@@ -60,12 +60,12 @@ const TikTokIcon = () => (
 
 const socialBrandColors: Record<string, string> = {
   Facebook: "#1877F2",
-  X: "#000000",
+  X: "#ffffff",
   LinkedIn: "#0A66C2",
   YouTube: "#FF0000",
   Instagram: "#E1306C",
   Pinterest: "#E60023",
-  TikTok: "#010101",
+  TikTok: "#ffffff",
 };
 
 function DesktopResourcesMenu({ resourcesDropdown }: { resourcesDropdown: DropdownItem[] }) {
@@ -78,16 +78,20 @@ function DesktopResourcesMenu({ resourcesDropdown }: { resourcesDropdown: Dropdo
       onMouseEnter={() => setOpen(true)}
       onMouseLeave={() => { setOpen(false); setHoveredIdx(null); }}
     >
-      <button className="flex items-center gap-1 text-[10px] xl:text-[11px] tracking-wide uppercase font-semibold text-white hover:text-white/70 transition-colors px-2 py-1 whitespace-nowrap">
+      <button className="flex items-center gap-1 text-[9px] xl:text-[10px] tracking-wide uppercase font-semibold text-white hover:text-white/70 transition-colors px-1.5 xl:px-2 py-1 whitespace-nowrap">
         Resources
         <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
       </button>
 
       {open && (
         <div
-          className="absolute top-[100%] left-1/2 -translate-x-1/2 w-72 bg-[#4a7c23] shadow-xl border border-white/20 py-2 flex flex-col z-50 overflow-y-auto"
-          style={{ maxHeight: "calc(100vh - 120px)" }}
-        >
+  className="absolute top-[100%] left-1/2 -translate-x-1/2 w-72 bg-[#4a7c23] shadow-xl border border-white/20 py-2 flex flex-col z-50 overflow-y-auto resources-dropdown"
+  style={{ 
+    maxHeight: "calc(100vh - 120px)",
+    scrollbarWidth: "none",       // Firefox
+    msOverflowStyle: "none",      // IE
+  }}
+>
           {resourcesDropdown.map((dropLink, idx) => (
             <div
               key={idx}
@@ -108,8 +112,9 @@ function DesktopResourcesMenu({ resourcesDropdown }: { resourcesDropdown: Dropdo
                 {dropLink.subItems && <ChevronRight className="w-3 h-3 opacity-70 shrink-0" />}
               </Link>
 
+              {/* FIX 3: was "right-full" (opened to the left), changed to "left-full" so it opens to the RIGHT */}
               {dropLink.subItems && hoveredIdx === idx && (
-                <div className="absolute top-0 right-full w-48 bg-[#3d6a1b] shadow-lg border border-white/20 py-2 flex flex-col z-50">
+                <div className="absolute top-0 left-full w-48 bg-[#3d6a1b] shadow-lg border border-white/20 py-2 flex flex-col z-[60]">
                   {dropLink.subItems.map((sub, sIdx) => (
                     <Link
                       key={sIdx}
@@ -171,9 +176,6 @@ export default function Header() {
   const [hoveredSocial, setHoveredSocial] = useState<string | null>(null);
   const headerRef = useRef<HTMLElement>(null);
 
-  // ── Measure header height and expose it as a CSS variable on :root
-  // This runs after every render and on resize so the hero always
-  // knows exactly how tall the header is — even on refresh.
   useEffect(() => {
     const update = () => {
       if (headerRef.current) {
@@ -185,6 +187,12 @@ export default function Header() {
     window.addEventListener("resize", update);
     return () => window.removeEventListener("resize", update);
   }, []);
+
+  // FIX 1: prevent body scroll (and thus page shift) when drawer is open
+  useEffect(() => {
+    document.body.style.overflow = isOpen ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [isOpen]);
 
   const mainNavLinks: NavLink[] = [
     { name: "Home", href: "/" },
@@ -239,7 +247,8 @@ export default function Header() {
   ];
 
   return (
-    <header ref={headerRef} className="w-full z-50 sticky top-0 shadow-md bg-[#4a7c23]">
+    // FIX 1: overflow-x-hidden stops the off-screen drawer creating horizontal scroll/page shift
+    <header ref={headerRef} className="w-full z-50 sticky top-0 shadow-md bg-[#4a7c23]" style={{ overflowX: "clip" }}>
 
       {/* ── Top bar ── */}
       <div className="w-full max-w-[1400px] mx-auto px-4 lg:px-6">
@@ -255,10 +264,11 @@ export default function Header() {
         <div className="hidden lg:grid grid-cols-[1fr_auto_1fr] items-center py-2">
           <div aria-hidden="true" />
           <div className="flex items-center justify-center">
-            <Link href="/" className="flex items-center shrink-0 mr-10">
-              <img src="/logo1.png" alt="Smith's Gardentown" className="lg:h-12 xl:h-14 w-auto" />
+            {/* FIX 2: smaller logo at lg, full size only at xl */}
+            <Link href="/" className="flex items-center shrink-0 mr-6 xl:mr-10">
+              <img src="/logo1.png" alt="Smith's Gardentown" className="h-10 lg:h-11 xl:h-14 w-auto" />
             </Link>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 xl:gap-3">
               {socialLinks.map((s) => (
                 <a
                   key={s.label}
@@ -288,14 +298,15 @@ export default function Header() {
       <div className="w-full border-t border-white/20" />
 
       {/* ── Desktop Nav bar ── */}
-      <div className="hidden lg:block w-full max-w-[1400px] mx-auto px-4 lg:px-6">
-        <nav className="flex items-center justify-center gap-x-1 xl:gap-x-2 py-2">
+      {/* FIX 2: tighter padding/font at lg so links fit at 100% zoom; loosens up at xl */}
+      <div className="hidden lg:block w-full max-w-[1400px] mx-auto px-2 xl:px-6">
+        <nav className="flex items-center justify-center gap-x-0 xl:gap-x-1 py-1.5 xl:py-2">
           {mainNavLinks.map((link) => (
             <Link
               key={link.name}
               href={link.href}
               target={link.external ? "_blank" : "_self"}
-              className="text-[10px] xl:text-[11px] tracking-wide uppercase font-semibold text-white hover:text-white/70 transition-colors px-2 py-1 whitespace-nowrap underline-offset-4 hover:underline"
+              className="text-[9px] xl:text-[10px] tracking-wide uppercase font-semibold text-white hover:text-white/70 transition-colors px-1.5 xl:px-2 py-1 whitespace-nowrap underline-offset-4 hover:underline"
             >
               {link.name}
             </Link>
@@ -307,7 +318,7 @@ export default function Header() {
             <Link
               key={link.name}
               href={link.href}
-              className="text-[10px] xl:text-[11px] tracking-wide uppercase font-semibold text-white hover:text-white/70 transition-colors px-2 py-1 whitespace-nowrap underline-offset-4 hover:underline"
+              className="text-[9px] xl:text-[10px] tracking-wide uppercase font-semibold text-white hover:text-white/70 transition-colors px-1.5 xl:px-2 py-1 whitespace-nowrap underline-offset-4 hover:underline"
             >
               {link.name}
             </Link>
@@ -316,14 +327,14 @@ export default function Header() {
           <Link
             href={shopLink.href}
             target="_blank"
-            className="ml-2 px-4 py-2 text-[10px] xl:text-[11px] tracking-wide uppercase font-bold bg-[#FFFF00] text-[#2d4e10] hover:bg-[#e6e600] transition-colors whitespace-nowrap rounded-sm"
+            className="ml-1 xl:ml-2 px-2.5 xl:px-4 py-1.5 xl:py-2 text-[9px] xl:text-[10px] tracking-wide uppercase font-bold bg-[#FFFF00] text-[#2d4e10] hover:bg-[#e6e600] transition-colors whitespace-nowrap rounded-sm"
           >
             {shopLink.name}
           </Link>
         </nav>
       </div>
 
-      {/* ── Mobile Drawer ── */}
+      {/* ── Mobile overlay backdrop ── */}
       <div
         className={`lg:hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-40 transition-opacity duration-300 ${
           isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
@@ -331,9 +342,11 @@ export default function Header() {
         onClick={() => setIsOpen(false)}
       />
 
+      {/* ── Mobile Drawer ── */}
+      {/* FIX 4: added opacity + smoother easing curve to the slide animation */}
       <div
-        className={`lg:hidden fixed top-0 right-0 h-full w-[85vw] max-w-sm bg-[#3a6b1b] z-50 shadow-2xl flex flex-col transition-transform duration-300 ease-in-out ${
-          isOpen ? "translate-x-0" : "translate-x-full"
+        className={`lg:hidden fixed top-0 right-0 h-full w-[85vw] max-w-sm bg-[#3a6b1b] z-50 shadow-2xl flex flex-col transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+          isOpen ? "translate-x-0 opacity-100" : "translate-x-full opacity-0"
         }`}
       >
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/15 shrink-0">
@@ -356,13 +369,19 @@ export default function Header() {
           ))}
         </div>
 
+        {/* FIX 4: staggered slide-in per nav item */}
         <nav className="flex-1 overflow-y-auto">
-          {[...mainNavLinks, ...trailingNavLinks].map((link) => (
+          {[...mainNavLinks, ...trailingNavLinks].map((link, i) => (
             <Link
               key={link.name}
               href={link.href}
               target={link.external ? "_blank" : "_self"}
-              className="flex items-center justify-between px-5 py-4 text-[13px] uppercase font-bold text-white/85 hover:text-white hover:bg-white/10 active:bg-white/15 transition-colors border-b border-white/10"
+              className="flex items-center justify-between px-5 py-4 text-[13px] uppercase font-bold text-white/85 hover:text-white hover:bg-white/10 active:bg-white/15 border-b border-white/10"
+              style={{
+                opacity: isOpen ? 1 : 0,
+                transform: isOpen ? "translateX(0)" : "translateX(16px)",
+                transition: `opacity 0.3s ease ${i * 0.04}s, transform 0.3s ease ${i * 0.04}s`,
+              }}
               onClick={() => setIsOpen(false)}
             >
               {link.name}
@@ -370,7 +389,14 @@ export default function Header() {
             </Link>
           ))}
 
-          <div className="border-b border-white/10">
+          <div
+            className="border-b border-white/10"
+            style={{
+              opacity: isOpen ? 1 : 0,
+              transform: isOpen ? "translateX(0)" : "translateX(16px)",
+              transition: `opacity 0.3s ease ${[...mainNavLinks, ...trailingNavLinks].length * 0.04}s, transform 0.3s ease ${[...mainNavLinks, ...trailingNavLinks].length * 0.04}s`,
+            }}
+          >
             <button
               onClick={() => setMobileResourcesOpen(!mobileResourcesOpen)}
               className="w-full flex items-center justify-between px-5 py-4 text-[13px] uppercase font-bold text-white/85 hover:text-white hover:bg-white/10 transition-colors"
