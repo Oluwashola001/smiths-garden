@@ -6,9 +6,9 @@ import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 
 const videos = [
-  "/videos/vid1.mp4",
-  "/videos/vid2.mp4",
-  "/videos/vid3.mp4",
+  { src: "/videos/vid1.mp4", poster: "/videos/vid1.webp" },
+  { src: "/videos/vid2.mp4", poster: "/videos/vid2.webp" },
+  { src: "/videos/vid3.mp4", poster: "/videos/vid3.webp" },
 ];
 
 /* ─────────────────────────────────────────────
@@ -16,19 +16,31 @@ const videos = [
 ───────────────────────────────────────────── */
 function TriptychPanel({
   src,
+  poster,
   index,
   isCenter,
 }: {
   src: string;
+  poster: string;
   index: number;
   isCenter: boolean;
 }) {
   const ref = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
-    if (ref.current) {
-      ref.current.play().catch(() => {});
+    const v = ref.current;
+    if (!v) return;
+
+    if (isCenter) {
+      v.play().catch(() => {});
+    } else {
+      const t = setTimeout(() => {
+        v.setAttribute("src", src);
+        v.play().catch(() => {});
+      }, 1500);
+      return () => clearTimeout(t);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -59,7 +71,8 @@ function TriptychPanel({
 
       <video
         ref={ref}
-        src={src}
+        src={isCenter ? src : undefined}
+        poster={poster}
         autoPlay
         loop
         muted
@@ -106,11 +119,12 @@ function MobileVideoCarousel() {
 
   return (
     <div className="absolute inset-0 overflow-hidden">
-      {videos.map((src, i) => (
+      {videos.map(({ src, poster }, i) => (
         <video
           key={src}
           ref={(el) => { videoRefs.current[i] = el; }}
           src={src}
+          poster={i === 0 ? poster : undefined}
           autoPlay
           loop
           muted
@@ -137,8 +151,8 @@ export default function Hero() {
 
         {/* ── DESKTOP: triptych ── */}
         <div className="hidden md:flex absolute inset-0 items-stretch gap-3 px-6 pb-8 pt-3 z-0">
-          {videos.map((src, i) => (
-            <TriptychPanel key={src} src={src} index={i} isCenter={i === 1} />
+          {videos.map(({ src, poster }, i) => (
+            <TriptychPanel key={src} src={src} poster={poster} index={i} isCenter={i === 1} />
           ))}
         </div>
 
